@@ -1,0 +1,82 @@
+# Describes the format for available services for bmw_connected_drive
+#
+# The services related to locking/unlocking are implemented in the lock
+# component to avoid redundancy.
+
+lock:
+  description: >
+    Description here
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+unlock:
+  description: >
+    Description here
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+start_engine:
+  description: >
+    Description here
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+stop_engine:
+  description: >
+    Description here
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+turn_on_ext_channel:
+  description: >
+    Description here
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+turn_off_ext_channel:
+  description: >
+    Description here
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+turn_on_coolant_heater:
+  description: >
+    Turn on coolant heater
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+turn_off_coolant_heater:
+  description: >
+    Turn on coolant heater
+  fields:
+    id:
+      description: >
+        The vehicle identification
+      example: 1234567
+
+update_state:
+  description: >
+    Fetch the last state of the vehicles of all your accounts from the BMW
+    server. This does *not* trigger an update from the vehicle, it just gets
+    the data from the BMW servers. This service does not require any attributes.

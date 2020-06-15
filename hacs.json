@@ -1,0 +1,11 @@
+{
+  "name": "Pandora Car Alarm System",
+  "domains": [
+    "device_tracker",
+    "binary_sensor",
+    "sensor"
+  ],
+"country": ["RU", "BY"],
+  "iot_class": "local push",
+  "render_readme": true
+}

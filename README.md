@@ -133,7 +133,7 @@ pandora-cas:
   alias: Включить подогрев сидений
   trigger:
     platform: state
-    entity_id: binary_sensor.honda_pilot_engine_state
+    entity_id: binary_sensor.1234567890_engine_state
     to: 'on'
   condition:
   - condition: time

@@ -31,7 +31,7 @@ Now add the following lines to your `configuration.yaml` file:
 
 ```yaml
 # Example configuration.yaml entry
-pandora-cas:
+pandora_cas:
   username: YOUR_USERNAME
   password: YOUR_PASSWORD
 ```
@@ -39,7 +39,7 @@ pandora-cas:
 Configuration variables:
 
 ```yaml
-pandora-cas:
+pandora_cas:
   (map) (Optional) Configuration options for Pandora Car Alarm System integration.
 
   username:

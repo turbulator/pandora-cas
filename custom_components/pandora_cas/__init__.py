@@ -18,7 +18,7 @@ REQUIREMENTS = []
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = 'pandora-cas'
+DOMAIN = 'pandora_cas'
 CONF_POLLING_INTERVAL = 'polling_interval'
 MIN_POLLING_INTERVAL = timedelta(seconds = 10)
 DEFAULT_POLLING_INTERVAL = timedelta(minutes = 1)

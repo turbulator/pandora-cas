@@ -31,7 +31,7 @@
 
 ```yaml
 # Фрагмент файла configuration.yaml
-pandora-cas:
+pandora_cas:
   username: YOUR_USERNAME
   password: YOUR_PASSWORD
 ```
@@ -39,7 +39,7 @@ pandora-cas:
 Описание конфигурации:
 
 ```yaml
-pandora-cas:
+pandora_cas:
   (map) (Optional) Настройки компонента Pandora Car Alarm System.
 
   username:
@@ -93,12 +93,12 @@ pandora-cas:
 
 | Команда | Действие | Примечание |
 |-|-|-|
-| pandora-cas.lock | Поставить под охрану |  |
-| pandora-cas.unlock | Снять с охраны | Может быть запрещено настройками блока сигнализации |
-| pandora-cas.start_engine | Запустить двигатель |  |
-| pandora-cas.stop_engine | Остановить двигатель |  |
-| pandora-cas.turn_on_ext_channel | Активировать доп. канал | См. [пример использования](https://www.drive2.ru/l/526540176697066100/) |
-| pandora-cas.turn_off_ext_channel | Деактивировать доп. канал |  |
+| pandora_cas.lock | Поставить под охрану |  |
+| pandora_cas.unlock | Снять с охраны | Может быть запрещено настройками блока сигнализации |
+| pandora_cas.start_engine | Запустить двигатель |  |
+| pandora_cas.stop_engine | Остановить двигатель |  |
+| pandora_cas.turn_on_ext_channel | Активировать доп. канал | См. [пример использования](https://www.drive2.ru/l/526540176697066100/) |
+| pandora_cas.turn_off_ext_channel | Деактивировать доп. канал |  |
 
 ### Примеры использования команд
 
@@ -109,7 +109,7 @@ pandora-cas:
     cards:
       - hold_action:
           action: call-service
-          service: pandora-cas.start_engine
+          service: pandora_cas.start_engine
           service_data:
             id: 1234567890
         icon: 'mdi:fan'
@@ -146,7 +146,7 @@ pandora-cas:
     - thu
     - fri
   action:
-    service: pandora-cas.turn_on_ext_channel
+    service: pandora_cas.turn_on_ext_channel
     data_template:
       id: 1234567890
 ```

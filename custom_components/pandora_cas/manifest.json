@@ -1,9 +1,9 @@
 {
   "domain": "pandora_cas",
   "name": "Pandora Car Alarm System",
-  "documentation": "https://github.com/turbo-lab/pandora-cas",
-  "issue_tracker": "https://github.com/turbo-lab/pandora-cas/issues",
+  "documentation": "https://github.com/turbulator/pandora-cas",
+  "issue_tracker": "https://github.com/turbulator/pandora-cas/issues",
   "dependencies": [],
-  "codeowners": ["@turbo-lab"],
+  "codeowners": ["@turbulator"],
   "requirements": []
 }

@@ -93,6 +93,8 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
             hass.async_create_task(
                 hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_DISCOVERY}, data=domain_config)
             )
+        else:
+            _LOGGER.warning("You have to remove obsolete %s section from configuration.yaml", DOMAIN)
     except KeyError:
         _LOGGER.warning("Import %s failed", DOMAIN)
 

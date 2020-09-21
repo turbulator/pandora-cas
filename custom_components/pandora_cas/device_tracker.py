@@ -23,9 +23,17 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry, 
     """Set up the tracker."""
 
     api = hass.data[DOMAIN]
+    tracker_ids = hass.states.async_entity_ids(PLATFORM_DOMAIN)
 
     trackers = []
     for _, device in api.devices.items():
+
+        # Dirty hack for legacy device tracker came from known_devices.yaml
+        entity_id = "{}.{}".format(PLATFORM_DOMAIN, slugify(device.pandora_id))
+        if entity_id in tracker_ids:
+            _LOGGER.warning("Entity %s is obsolete. You have to remove it from known_devices.yaml", entity_id)
+            hass.states.async_remove(entity_id)
+
         trackers.append(PandoraTrackerEntity(hass, device))
 
     async_add_entities(trackers, False)

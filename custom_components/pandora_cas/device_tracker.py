@@ -45,7 +45,7 @@ class PandoraTrackerEntity(TrackerEntity):
     @property
     def unique_id(self) -> str:
         """Return the entity_id of the binary sensor."""
-        return "{}_{}".format(PLATFORM_DOMAIN, slugify(self._device.pandora_id))
+        return "{}_{}".format(DOMAIN, slugify(self._device.pandora_id))
 
     @property
     def name(self) -> str:

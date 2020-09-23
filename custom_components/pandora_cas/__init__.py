@@ -71,15 +71,13 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     if DOMAIN not in config:
         return True
 
-    async def _execute_service(call) -> bool:
+    async def _execute_command(call) -> bool:
         api = hass.data[DOMAIN]
         if api is not None:
-            await api.async_service(call.data[ATTR_ID], SERVICE_MAP[call.service][ATTR_COMMAND])
+            await api.async_command(call.data[ATTR_ID], SERVICE_MAP[call.service][ATTR_COMMAND])
 
     for service, service_config in SERVICE_MAP.items():
-        hass.services.async_register(
-            DOMAIN, service, _execute_service, schema=service_config[ATTR_SCHEMA],
-        )
+        hass.services.async_register(DOMAIN, service, _execute_command, schema=service_config[ATTR_SCHEMA])
 
     try:
         domain_config = config.get(DOMAIN, {})

@@ -158,7 +158,7 @@ class PandoraApi:
 
         return True
 
-    async def async_service(self, pandora_id: str, command: str):
+    async def async_command(self, pandora_id: str, command: str):
         """Send the command to device.
 
         The response should be like this: {"PANDORA_ID": "sent"}. PANDORA_ID must be the same as in request.
@@ -172,6 +172,7 @@ class PandoraApi:
         ).result[pandora_id]
 
         if status != "sent":
+            _LOGGER.warning("async_command: %s", status)
             raise PandoraApiException(status)
 
         async def _handle_refresh(*_):

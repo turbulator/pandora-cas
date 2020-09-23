@@ -105,14 +105,15 @@ class PandoraApi:
 
         _LOGGER.info("Login successful")
 
-    async def _request_safe(self, path, data=None, method="GET"):
+    async def _request_safe(self, path, data=None, method="GET", relogin=False):
         """ High-level request function.
 
         It will make login on server if it isn't done before.
         It also checks the expiration/validity of the cookies. If problems - tries to make relogin.
         """
 
-        if not self._session:
+        if not self._session or relogin:
+            self._session_id = None
             await self.login()
 
         response = await self._request(path, data, method)
@@ -124,9 +125,7 @@ class PandoraApi:
                 "sid-expired",
             }:
                 _LOGGER.info("PandoraApi: %s. Making relogin.", response["error_text"])
-                self._session_id = None
-                await self.login()
-                response = await self._request(path, data, method)
+                response = await self._request_safe(path, data, method=method, relogin=True)
 
         return response
 

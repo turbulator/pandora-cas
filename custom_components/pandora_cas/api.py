@@ -81,10 +81,10 @@ class PandoraApi:
             raise PandoraApiException("JSON decode error") from None
         # Connection related error
         except aiohttp.ClientConnectionError as ex:
-            raise PandoraApiException(ex) from None
+            raise PandoraApiException(type(ex).__name__) from None
         # Response related error
         except aiohttp.ClientResponseError as ex:
-            raise PandoraApiException(ex.message) from None
+            raise PandoraApiException(type(ex).__name__) from None
         # Something goes wrong in server-side logic
         except PandoraApiException as ex:
             raise PandoraApiException(ex) from None
@@ -151,10 +151,10 @@ class PandoraApi:
                 for pandora_id, attrs in response.items():
                     await self._devices[pandora_id].update(attrs)
             except KeyError:
-                _LOGGER.warning("Got data for unexpected PANDORA_ID '%s'. Skipping...", pandora_id)
+                _LOGGER.info("Got data for unexpected PANDORA_ID '%s'. Skipping...", pandora_id)
 
         except PandoraApiException as ex:
-            _LOGGER.warning("Update failed: %s", str(ex))
+            _LOGGER.info("Update failed: %s", str(ex))
 
         return True
 

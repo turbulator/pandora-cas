@@ -430,6 +430,49 @@ class PandoraApiUpdateResponseParser:
             "1234":3
         }
     }
+
+    device-control.js:unpackStatusFlags
+        r.b_locked = bb.shiftRight(0).and(1).toJSNumber(); // под охраной;
+        r.b_alarm = bb.shiftRight(1).and(1).toJSNumber(); // тревога;
+        r.b_engine = bb.shiftRight(2).and(1).toJSNumber(); // двигатель заведен;
+        r.b_ignition = bb.shiftRight(3).and(1).toJSNumber(); // зажигание включено;
+        r.b_autostart_init = bb.shiftRight(4).and(1).toJSNumber(); // процедура АЗ активна;
+        r.b_hf_lock = bb.shiftRight(5).and(1).toJSNumber(); // HandsFree постановка под охрану при удалении от авто
+        r.b_hf_unlock = bb.shiftRight(6).and(1).toJSNumber(); // HandsFree снятие с охраны при приближении к авто
+        r.b_gsm = bb.shiftRight(7).and(1).toJSNumber(); // Gsm-модем включен
+
+        r.b_gps = bb.shiftRight(8).and(1).toJSNumber(); // Gps-приемник включен
+        r.b_tracking = bb.shiftRight(9).and(1).toJSNumber(); // трекинг включен
+        r.b_immo = bb.shiftRight(10).and(1).toJSNumber(); // Двигатель заблокирован
+        r.b_ext_sensor_alert_zone = bb.shiftRight(11).and(1).toJSNumber(); // Отключен контроль доп. датчика, предупредительная зона
+        r.b_ext_sensor_main_zone = bb.shiftRight(12).and(1).toJSNumber(); // Отключен контроль доп. датчика, основная зона
+        r.b_sensor_alert_zone = bb.shiftRight(13).and(1).toJSNumber(); // Отключен контроль датчика удара, предупредительная зона
+        r.b_sensor_main_zone = bb.shiftRight(14).and(1).toJSNumber(); // Отключен контроль датчика удара, основная зона
+        r.b_autostart = bb.shiftRight(15).and(1).toJSNumber(); // Запрограммирован АЗ двигателя
+        
+        r.b_sms = bb.shiftRight(16).and(1).toJSNumber(); // Разрешена отправка СМС – сообщений
+        r.b_call = bb.shiftRight(17).and(1).toJSNumber(); // Разрешены голосовые вызовы
+        r.b_light = bb.shiftRight(18).and(1).toJSNumber(); // Включены габаритные огни (фары, свет.)
+        r.b_sound1 = bb.shiftRight(19).and(1).toJSNumber(); // Выкл. Предупредительные сигналы сирены
+        r.b_sound2 = bb.shiftRight(20).and(1).toJSNumber(); // Выкл. Все звуковые сигналы сирены
+        r.b_door_front_left = bb.shiftRight(21).and(1).toJSNumber();
+        r.b_door_front_right = bb.shiftRight(22).and(1).toJSNumber();
+        r.b_door_back_left = bb.shiftRight(23).and(1).toJSNumber();
+
+        r.b_door_back_right = bb.shiftRight(24).and(1).toJSNumber();
+        r.b_trunk = bb.shiftRight(25).and(1).toJSNumber(); // багажник
+        r.b_hood = bb.shiftRight(26).and(1).toJSNumber(); // капот
+        r.b_handbrake = bb.shiftRight(27).and(1).toJSNumber(); // ручной тормоз
+        r.b_brakes = bb.shiftRight(28).and(1).toJSNumber(); // тормоз
+        r.b_temp = bb.shiftRight(29).and(1).toJSNumber(); // предпусковой подогреватель
+        r.b_active_secure = bb.shiftRight(30).and(1).toJSNumber(); // активная охрана
+        r.b_heat = bb.shiftRight(31).and(1).toJSNumber(); // Запрограммирован пред. подогреватель
+
+        r.b_evaq = bb.shiftRight(33).and(1).toJSNumber(); // режим эвакуации включен
+        r.b_to = bb.shiftRight(34).and(1).toJSNumber(); // режим ТО включен
+        r.b_stay_home = bb.shiftRight(35).and(1).toJSNumber(); // stay home
+        r.b_zapret_oprosa_metok = bb.shiftRight(60).and(1).toJSNumber(); // запрет опроса меток
+        r.b_zapret_snyatia_s_ohrani_bez_metki = bb.shiftRight(61).and(1).toJSNumber(); // запрет снятия с охраны при отсутствии метки в зоне
     """
 
     def __init__(self, response):

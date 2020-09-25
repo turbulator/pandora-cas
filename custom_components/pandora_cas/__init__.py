@@ -71,14 +71,6 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     if DOMAIN not in config:
         return True
 
-    async def _execute_command(call) -> bool:
-        api = hass.data[DOMAIN]
-        if api is not None:
-            await api.async_command(call.data[ATTR_ID], SERVICE_MAP[call.service][ATTR_COMMAND])
-
-    for service, service_config in SERVICE_MAP.items():
-        hass.services.async_register(DOMAIN, service, _execute_command, schema=service_config[ATTR_SCHEMA])
-
     try:
         domain_config = config.get(DOMAIN, {})
 
@@ -107,6 +99,14 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
     polling_interval = config_entry.data[CONF_POLLING_INTERVAL]
 
     _LOGGER.debug("Setting up entry %s for account %s", config_entry.entry_id, username)
+
+    async def _execute_command(call) -> bool:
+        api = hass.data[DOMAIN]
+        if api is not None:
+            return await api.async_command(call.data[ATTR_ID], SERVICE_MAP[call.service][ATTR_COMMAND])
+
+    for service, service_config in SERVICE_MAP.items():
+        hass.services.async_register(DOMAIN, service, _execute_command, schema=service_config[ATTR_SCHEMA])
 
     try:
         api = hass.data[DOMAIN] = PandoraApi(hass, username, password, polling_interval)

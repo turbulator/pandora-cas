@@ -1,149 +1,208 @@
 """
-Reads vehicle status from BMW connected drive portal.
+TODO
 
-For more details about this platform, please refer to the documentation at
-https://home-assistant.io/components/binary_sensor.bmw_connected_drive/
+DETAILS
 """
 import logging
 
-from homeassistant.components.binary_sensor import (BinarySensorDevice, 
-                                                    ENTITY_ID_FORMAT)
-from . import DOMAIN as PANDORA_DOMAIN
-from homeassistant.const import STATE_OFF, STATE_ON
+from homeassistant.components.binary_sensor import (
+    DEVICE_CLASS_CONNECTIVITY,
+    DEVICE_CLASS_DOOR,
+    ENTITY_ID_FORMAT,
+    BinarySensorEntity,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME
+from homeassistant.core import callback
+from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
+
+from .api import PandoraDevice
+from .base import PandoraEntity
+from .const import DOMAIN, ATTR_DEVICE_ATTR, ATTR_INVERSE, ATTR_IS_CONNECTION_SENSITIVE, ATTR_SHIFT_BITS
+
 
 _LOGGER = logging.getLogger(__name__)
 
 
-SENSOR_TYPES = {
-    'connection_state': ["Connection state", "", "",  'connectivity', False, "online", 0, 0],
-    'engine_state': ["Engine state", "mdi:fan", "mdi:fan-off", "", True, "bit_state_1", 2, 0],
-    'moving': ["Moving", "", "",  'motion', True, "move", 0, 0],
-    'lock_state': ["Lock", "mdi:lock-open", "mdi:lock", "lock", True, "bit_state_1", 0, 1],
-    'left_front_door': ["Left Front Door", "mdi:car-door", "mdi:car-door", "door", True, "bit_state_1", 21, 0],
-    'right_front_door': ["Right Front Door", "mdi:car-door", "mdi:car-door", "door", True, "bit_state_1", 22, 0],
-    'left_back_door': ["Left Back Door", "mdi:car-door", "mdi:car-door", "door", True, "bit_state_1", 23, 0],
-    'right_back_door': ["Right Back Door", "mdi:car-door", "mdi:car-door", "door", True, "bit_state_1", 24, 0],
-    'trunk': ["Trunk", "mdi:car-back", "mdi:car-back", "door", True, "bit_state_1", 25, 0],
-    'hood': ["Hood", "mdi:car", "mdi:car", "door", True, "bit_state_1", 26, 0],
-    'coolant_heater': ["Coolant Heater", "mdi:thermometer-plus", "mdi:thermometer-plus", "", True, "bit_state_1", 29, 0],
+ENTITY_CONFIGS = {
+    "connection_state": {
+        ATTR_NAME: "connection",
+        ATTR_ICON: None,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_CONNECTIVITY,
+        ATTR_IS_CONNECTION_SENSITIVE: False,
+        ATTR_DEVICE_ATTR: "online",
+        ATTR_SHIFT_BITS: 0,
+        ATTR_INVERSE: 0,
+    },
+    "engine_state": {
+        ATTR_NAME: "engine",
+        ATTR_ICON: {True: "mdi:fan", False: "mdi:fan-off"},
+        ATTR_DEVICE_CLASS: "pandora_cas__engine",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 2,
+        ATTR_INVERSE: 0,
+    },
+    "moving": {
+        ATTR_NAME: "moving",
+        ATTR_ICON: None,
+        ATTR_DEVICE_CLASS: "pandora_cas__moving",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "move",
+        ATTR_SHIFT_BITS: 0,
+        ATTR_INVERSE: 0,
+    },
+    "lock": {
+        ATTR_NAME: "guard",
+        ATTR_ICON: {True: "mdi:shield-off", False: "mdi:shield-check"},
+        ATTR_DEVICE_CLASS: "pandora_cas__guard",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 0,
+        ATTR_INVERSE: 1,
+    },
+    "left_front_door": {
+        ATTR_NAME: "front left door",
+        ATTR_ICON: "mdi:car-door",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 21,
+        ATTR_INVERSE: 0,
+    },
+    "right_front_door": {
+        ATTR_NAME: "front right door",
+        ATTR_ICON: "mdi:car-door",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 22,
+        ATTR_INVERSE: 0,
+    },
+    "left_back_door": {
+        ATTR_NAME: "back left door",
+        ATTR_ICON: "mdi:car-door",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 23,
+        ATTR_INVERSE: 0,
+    },
+    "right_back_door": {
+        ATTR_NAME: "back right door",
+        ATTR_ICON: "mdi:car-door",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 24,
+        ATTR_INVERSE: 0,
+    },
+    "trunk": {
+        ATTR_NAME: "trunk",
+        ATTR_ICON: "mdi:car-back",
+        ATTR_DEVICE_CLASS: "pandora_cas__door_male",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 25,
+        ATTR_INVERSE: 0,
+    },
+    "hood": {
+        ATTR_NAME: "hood",
+        ATTR_ICON: "mdi:car",
+        ATTR_DEVICE_CLASS: "pandora_cas__door_male",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 26,
+        ATTR_INVERSE: 0,
+    },
+    "coolant_heater": {
+        ATTR_NAME: "coolant heater",
+        ATTR_ICON: {True: "mdi:thermometer-plus", False: "mdi:thermometer"},
+        ATTR_DEVICE_CLASS: None,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 29,
+        ATTR_INVERSE: 0,
+    },
 }
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the BMW sensors."""
-    account = hass.data[PANDORA_DOMAIN]
+# pylint: disable=unused-argument
+async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities):
+    """"""
 
-    devices = []
-    for vehicle in account.account.vehicles:
-        for parameter, _ in sorted(SENSOR_TYPES.items()):
-            name = SENSOR_TYPES[parameter][0]
-            icon_on = SENSOR_TYPES[parameter][1]
-            icon_off = SENSOR_TYPES[parameter][2]
-            device_class = SENSOR_TYPES[parameter][3]
-            attribute = SENSOR_TYPES[parameter][5]
-            shift_bits = SENSOR_TYPES[parameter][6]
-            is_negative = SENSOR_TYPES[parameter][7]
-            is_state_sensitive = SENSOR_TYPES[parameter][4]
+    api = hass.data[DOMAIN]
 
-            device = PandoraSensor(account, 
-                                    vehicle,
-                                    name,
-                                    icon_on,
-                                    icon_off,
-                                    device_class,
-                                    attribute,
-                                    shift_bits,
-                                    is_negative,
-                                    is_state_sensitive)
-            devices.append(device)
+    binary_sensors = []
+    for _, device in api.devices.items():
+        for entity_id, entity_config in ENTITY_CONFIGS.items():
+            binary_sensors.append(PandoraBinarySensorEntity(hass, device, entity_id, entity_config))
 
-    add_entities(devices, True)
+    async_add_entities(binary_sensors, False)
 
 
-class PandoraSensor(BinarySensorDevice):
-    """Representation of a BMW vehicle binary sensor."""
+class PandoraBinarySensorEntity(PandoraEntity, BinarySensorEntity):
+    """"""
 
-    def __init__(self, account, vehicle, name: str, icon_on: str, icon_off: str, device_class: str, attribute: str, shift_bits: int, is_negative: int, is_state_sensitive: bool):
+    ENTITY_ID_FORMAT = ENTITY_ID_FORMAT
+
+    def __init__(
+        self, hass, device: PandoraDevice, entity_id: str, entity_config: dict,
+    ):
         """Constructor."""
-        self._vehicle = vehicle
-        self._account = account
-        self._name = "{} {}".format(self._vehicle.name, name)
-        self._state = None
-        self._icon_on = icon_on
-        self._icon_off = icon_off
-        self._device_class = device_class
-        self._attribute = attribute
-        self._shift_bits = shift_bits
-        self._is_negative = is_negative
-        self._is_state_sensitive = is_state_sensitive
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            "{}_{}".format(slugify(str(self._vehicle.id)), slugify(name))
-        )
+        super().__init__(hass, device, entity_id, entity_config)
 
-    @property
-    def should_poll(self) -> bool:
-        """Return False.
-
-        Data update is triggered from BMWConnectedDriveEntity.
-        """
-        return False
-
-    @property
-    def name(self) -> str:
-        """Return the name of the binary sensor."""
-        return self._name
-
-    @property
-    def device_class(self) -> str:
-        """Return the class of the binary sensor."""
-        return self._device_class
-
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self._available
+        self._state = False
+        self.entity_id = self.ENTITY_ID_FORMAT.format("{}_{}".format(slugify(device.pandora_id), entity_id))
 
     @property
     def icon(self) -> str:
         """Return the icon of the binary sensor."""
-        if self._state:
-            return self._icon_on
-        else:
-            return self._icon_off
+
+        icon = self._config[ATTR_ICON]
+        if isinstance(icon, dict):
+            return icon[self._state]
+
+        return icon
+
+    @property
+    def shift_bits(self) -> int:
+        """Return the name of the binary sensor."""
+        return self._config[ATTR_SHIFT_BITS]
+
+    @property
+    def inverse(self) -> int:
+        """Return the name of the binary sensor."""
+        return self._config[ATTR_INVERSE]
 
     @property
     def is_on(self) -> bool:
         """Return the state of the binary sensor."""
         return self._state
 
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes of the sensor."""
-        return {
-            'car': self._vehicle.name
-        }
-
-    def update(self):
-        """Read new state data from the library."""
-        vehicle_state = self._vehicle.state
-
-        if vehicle_state.online == 1 or self._is_state_sensitive == False:
-            self._available = True
-            if (int(getattr(vehicle_state, self._attribute)) >> self._shift_bits) & 0x0000000000000001 ^ self._is_negative:
-                self._state = True
+    # pylint: disable=attribute-defined-outside-init
+    @callback
+    def _update_callback(self, force=False):
+        """"""
+        try:
+            state = False
+            if self._device.is_online or not self.is_connection_sensitive:
+                if (int(getattr(self._device, self.device_attr)) >> self.shift_bits) & 1 ^ self.inverse:
+                    state = True
+                available = True
             else:
-                self._state = False
-        else:
-            self._available = False
+                available = False
 
-    def update_callback(self):
-        """Schedule a state update."""
-        self.schedule_update_ha_state(True)
+            if self._state != state or self._available != available:
+                self._state = state
+                self._available = available
+                self.async_write_ha_state()
+        except KeyError:
+            _LOGGER.warning("%s: can't get data from linked device", self.name)
 
     async def async_added_to_hass(self):
-        """Add callback after being added to hass.
+        """When entity is added to hass."""
 
-        Show latest data after startup.
-        """
-        self._account.add_update_listener(self.update_callback)
+        self.async_on_remove(self._hass.data[DOMAIN].async_add_listener(self._update_callback))
+        self._update_callback(True)

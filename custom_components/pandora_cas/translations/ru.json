@@ -1,0 +1,31 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Только одна интеграция может быть добавлена"
+        },
+        "error": {
+            "invalid_polling_interval": "Интервал опроса должен быть больше 10 секунд"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "username": "Username",
+                    "password": "Password",
+                    "polling_interval": "Polling interval, секунд"
+                },
+                "title": "Подключение к Pandora Online",
+                "description": "Введите логин и пароль от сайта Pandora Online (p-on.ru)"
+            },
+            "discovery_confirm": {
+                "data": {
+                    "username": "Username",
+                    "password": "Password",
+                    "polling_interval": "Polling interval, секунд"
+                },
+                "title": "Импорт из файла configuration.yaml",
+                "description": "Проверьте логин и пароль от сайта Pandora Online (p-on.ru)"
+            }
+        },
+        "title": "Pandora Car Alarm System"
+    }
+}

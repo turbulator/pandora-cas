@@ -1,60 +1,55 @@
-# Describes the format for available services for bmw_connected_drive
-#
-# The services related to locking/unlocking are implemented in the lock
-# component to avoid redundancy.
-
 lock:
   description: >
-    Description here
+    Turn on the guard
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 unlock:
   description: >
-    Description here
+    Turn off the guard
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 start_engine:
   description: >
-    Description here
+    Start engine
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 stop_engine:
   description: >
-    Description here
+    Stop engine
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 turn_on_ext_channel:
   description: >
-    Description here
+    Turn on external channel (GSM)
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 turn_off_ext_channel:
   description: >
-    Description here
+    Turn off external channel (GSM)
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 turn_on_coolant_heater:
@@ -63,20 +58,14 @@ turn_on_coolant_heater:
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
 
 turn_off_coolant_heater:
   description: >
-    Turn on coolant heater
+    Turn off coolant heater
   fields:
     id:
       description: >
-        The vehicle identification
+        The ID of Pandora device (PANDORA_ID)
       example: 1234567
-
-update_state:
-  description: >
-    Fetch the last state of the vehicles of all your accounts from the BMW
-    server. This does *not* trigger an update from the vehicle, it just gets
-    the data from the BMW servers. This service does not require any attributes.

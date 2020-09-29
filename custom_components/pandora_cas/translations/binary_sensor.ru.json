@@ -1,0 +1,8 @@
+{
+    "state": {
+        "pandora_cas__engine": {"off": "Заглушен", "on": "Работает"},
+        "pandora_cas__door_male": {"off": "Закрыт", "on": "Открыт"},
+        "pandora_cas__moving": {"off": "Неподвижно", "on": "В движении"},
+        "pandora_cas__guard": {"off": "Под охраной", "on": "Снято с охраны"}
+    }
+}

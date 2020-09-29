@@ -1,13 +1,13 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-[![Donate](https://img.shields.io/badge/donate-Yandex-orange.svg)](https://money.yandex.ru/to/41001690673042)
-
 # Home Assistant custom component for Pandora Car Alarm System
+
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+[![Donate](https://img.shields.io/badge/donate-Yandex-orange.svg)](https://money.yandex.ru/to/41001690673042)
 
 **Русский** | [English](https://github.com/turbo-lab/pandora-cas/blob/master/README_EN.md)
 
 ![Pandora](https://raw.githubusercontent.com/turbo-lab/pandora-cas/master/images/pandora.gif)
 
-Автомобиль тоже может быть частью умного дома. С помощью этого компонента вы сможете отслеживать состояние, управлять и автоматизировать свой автомобиль, если он оборудован охранной системой Pandora. После настройки ваши автомобили автоматически обнаружатся и добавятся в Home Assistant.
+Автомобиль тоже может быть частью умного дома. С помощью этого компонента вы сможете отслеживать состояние, управлять и автоматизировать свой автомобиль если он оборудован охранной системой Pandora или Pandect. После настройки интеграции ваши автомобили автоматически обнаружатся и добавятся в Home Assistant.
 
 Компонент использует неофициальный API, полученный в результате reverse engineering, к официальному сайту Pandora `https://p-on.ru`. Функциональность компонента, в целом, повторяет функциональность, доступную на сайте или в мобильном приложении. Для настройки Вам следует использовать те же авторизационные данные, что вы используете на сайте Pandora.
 
@@ -15,43 +15,26 @@
 
 - [Device Tracker](#device-tracker): Местоположение автомобиля.
 - [Sensors and Binary Sensors](#sensors): Температура, скорость, статус охраны, дверей и т.д.
-- [Services](#services): Команды, например: открыть/закрыть, завести/заглушить и др.
+- [Services](#команды): Команды, например: открыть/закрыть, завести/заглушить и др.
 
 ## Установка
 
-1. Установить [HACS](https://hacs.xyz/docs/installation/manual)
-1. Зайти в HACS в управление Custom repositories и добавить URL этого репозитория ```https://github.com/turbo-lab/pandora-cas```, как Integration
-1. Установить компонент Pandora Car Alarm System
-1. Настроить компонент в файле `configuration.yaml` (см. следующий пункт)
-1. Перезапустить Home Assistant
+1. Установите [HACS](https://hacs.xyz/docs/installation/manual)
+1. Перейдите в раздел  HACS -> Integrations
+1. Нажмите кнопку "+", расположенную в нижней правой части экрана
+1. Наберите "Pandora" для поиска компонента
+1. Установите компонент Pandora Car Alarm System
+1. (?) Перезапустите Home Assistant
 
 ## Настройка
 
-Чтобы активировать компонент, добавьте эти строки в файл `configuration.yaml`:
-
-```yaml
-# Фрагмент файла configuration.yaml
-pandora_cas:
-  username: YOUR_USERNAME
-  password: YOUR_PASSWORD
-```
-
-Описание конфигурации:
-
-```yaml
-pandora_cas:
-  (map) (Optional) Настройки компонента Pandora Car Alarm System.
-
-  username:
-    (string)(Required): Логин от сайта p-on.ru.
-
-  password:
-    (string)(Required): Пароль от сайта p-on.ru.
-
-  polling_interval:
-    (integer)(Optional): Интервал обновления информации с сайта. Меньше значение - быстрее обновляется, но потребляет больше траффика. По-умолчанию: 60s, минимум: 10s
-
-```
+1. Перейдите в раздел Настройки -> Интеграции
+1. Обновите кэш браузера комбинацией Shift+F5
+1. Наберите "Pandora" для поиска интеграции
+1. Выберите Pandora Car Alarm System
+1. Введите логин, пароль, а также частоту обновления информации с сайта p-on.ru
+1. При необходимотсти задайте помещение для автомобиля
+1. Устройства и сенсоры добавятся в Home Assistant
 
 ## Device Tracker
 
@@ -63,7 +46,7 @@ pandora_cas:
 
 | Объект | Назначение | Примечание |
 |-|-|-|
-| sensor.`PANDORA_ID`_milage  | Пробег | км |
+| sensor.`PANDORA_ID`_mileage  | Пробег | км |
 | sensor.`PANDORA_ID`_fuel_level |  | % |
 | sensor.`PANDORA_ID`_cabin_temperature | Температура салона | °C |
 | sensor.`PANDORA_ID`_engine_temperature | Температура двигателя | °C |
@@ -89,7 +72,7 @@ pandora_cas:
 
 Для команд обязательно нужно указывать идентификатор `PANDORA_ID`. Система должна понять какой именно автомобиль должен выполнить команду, если их несколько.
 
-> Внимание! Через 10с после выполнения команды производится принудительное автоматическое обновление состояния автомобиля.
+> Внимание! Через 10с после отправки команды будет произведена серия принудительных обновлений состояния автомобиля для более точной фиксации изменения состояния.
 
 | Команда | Действие | Примечание |
 |-|-|-|

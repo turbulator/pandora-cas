@@ -1,137 +1,181 @@
 """
-Reads vehicle status from BMW connected drive portal.
+TODO
 
-For more details about this platform, please refer to the documentation at
-https://home-assistant.io/components/sensor.bmw_connected_drive/
+DETAILS
 """
 import logging
 
-from . import DOMAIN as PANDORA_DOMAIN
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
-from homeassistant.const import (LENGTH_KILOMETERS,
-                                 TEMP_CELSIUS)
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.icon import icon_for_battery_level
+from homeassistant.components.sensor import ENTITY_ID_FORMAT, DEVICE_CLASS_TEMPERATURE
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME, LENGTH_KILOMETERS, TEMP_CELSIUS
+from homeassistant.core import callback
+from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
+
+from .api import PandoraDevice
+from .base import PandoraEntity
+from .const import DOMAIN, ATTR_DEVICE_ATTR, ATTR_IS_CONNECTION_SENSITIVE, ATTR_UNITS, ATTR_FORMATTER
+
 
 _LOGGER = logging.getLogger(__name__)
 
-SENSOR_TYPES = {
-    'mileage': ["Milage", "mdi:map-marker-distance", LENGTH_KILOMETERS, True],
-    'fuel': ["Fuel level", 'mdi:gauge', "%", False],
-    'cabin_temp': ["Cabin temperature", 'mdi:thermometer', TEMP_CELSIUS, True],
-    'engine_temp': ["Engine temperature", 'mdi:thermometer', TEMP_CELSIUS, True],
-    'out_temp': ["Ambient temperature", 'mdi:thermometer', TEMP_CELSIUS, True],
-    'balance': ["Balance", "mdi:cash", "₽", False],
-    'speed': ["Speed", 'mdi:gauge', "km/h", True],
-    'engine_rpm': ["Engine RPM", 'mdi:gauge', None, True],
-    'gsm_level': ["GSM level", 'mdi:network-strength-2', None, True],
-    'battery': ["Battery voltage", 'mdi:car-battery', "V", True],
+
+ENTITY_CONFIGS = {
+    "mileage": {
+        ATTR_NAME: "mileage",
+        ATTR_ICON: "mdi:map-marker-distance",
+        ATTR_DEVICE_CLASS: None, # TODO: Make propper device class
+        ATTR_UNITS: LENGTH_KILOMETERS,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "mileage",
+        ATTR_FORMATTER: lambda v: round(float(v), 2),
+    },
+    "fuel_level": {
+        ATTR_NAME: "fuel",
+        ATTR_ICON: "mdi:gauge",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_UNITS: "%",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "fuel",
+    },
+    "cabin_temperature": {
+        ATTR_NAME: "cabin temperature",
+        ATTR_ICON: "mdi:thermometer",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNITS: TEMP_CELSIUS,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "cabin_temp",
+    },
+    "engine_temperature": {
+        ATTR_NAME: "Engine temperature",
+        ATTR_ICON: "mdi:thermometer",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNITS: TEMP_CELSIUS,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "engine_temp",
+    },
+    "ambient_temperature": {
+        ATTR_NAME: "Ambient temperature",
+        ATTR_ICON: "mdi:thermometer",
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNITS: TEMP_CELSIUS,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "out_temp",
+    },
+    "balance": {
+        ATTR_NAME: "balance",
+        ATTR_ICON: "mdi:cash",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_UNITS: "₽",
+        ATTR_IS_CONNECTION_SENSITIVE: False,
+        ATTR_DEVICE_ATTR: "balance",
+        ATTR_FORMATTER: lambda v: round(float(v["value"]), 2),
+    },
+    "speed": {
+        ATTR_NAME: "speed",
+        ATTR_ICON: "mdi:gauge",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_UNITS: "km/h",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "speed",
+        ATTR_FORMATTER: lambda v: round(float(v), 1),
+    },
+    "engine_rpm": {
+        ATTR_NAME: "engine RPM",
+        ATTR_ICON: "mdi:gauge",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_UNITS: None,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "engine_rpm",
+    },
+    "gsm_level": {
+        ATTR_NAME: "GSM level",
+        ATTR_ICON: "mdi:network-strength-2",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_UNITS: None,
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "gsm_level",
+    },
+    "battery_voltage": {
+        ATTR_NAME: "battery",
+        ATTR_ICON: "mdi:car-battery",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_UNITS: "V",
+        ATTR_IS_CONNECTION_SENSITIVE: True,
+        ATTR_DEVICE_ATTR: "voltage",
+    },
 }
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    account = hass.data[PANDORA_DOMAIN]
-    devices = []
+# pylint: disable=unused-argument
+async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities):
+    """Set up ecobee binary (occupancy) sensors."""
 
-    for vehicle in account.account.vehicles:
-        for parameter, _ in sorted(SENSOR_TYPES.items()):
-            name = SENSOR_TYPES[parameter][0]
-            icon = SENSOR_TYPES[parameter][1]
-            unit = SENSOR_TYPES[parameter][2]
-            state_sensitive = SENSOR_TYPES[parameter][3]
+    api = hass.data[DOMAIN]
 
-            device = PandoraSensor(account, 
-                                    vehicle,
-                                    parameter,
-                                    name,
-                                    icon,
-                                    unit,
-                                    state_sensitive)
-            devices.append(device)
+    sensors = []
+    for _, device in api.devices.items():
+        for entity_id, entity_config in ENTITY_CONFIGS.items():
+            sensors.append(PandoraSensorEntity(hass, device, entity_id, entity_config))
 
-    add_entities(devices, True)
+    async_add_entities(sensors, False)
 
 
-class PandoraSensor(Entity):
+class PandoraSensorEntity(PandoraEntity):
     """Representation of a BMW vehicle sensor."""
 
-    def __init__(self, account, vehicle, parameter: str, name: str, icon: str, unit: str, state_sensitive: bool):
+    ENTITY_ID_FORMAT = ENTITY_ID_FORMAT
+
+    def __init__(
+        self, hass, device: PandoraDevice, entity_id: str, entity_config: dict,
+    ):
         """Constructor."""
-        self._vehicle = vehicle
-        self._account = account
-        self._parameter = parameter
-        self._name = "{} {}".format(self._vehicle.name, name)
-        self._state = None
-        self._icon = icon
-        self._unit = unit
-        self._state_sensitive = state_sensitive
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            "{}_{}".format(slugify(str(self._vehicle.id)), slugify(name))
-        )
+        super().__init__(hass, device, entity_id, entity_config)
+
+        self.entity_id = self.ENTITY_ID_FORMAT.format("{}_{}".format(slugify(device.pandora_id), entity_id))
 
     @property
-    def should_poll(self) -> bool:
-        """Return False.
+    def icon(self) -> str:
+        """Return the icon of the binary sensor."""
 
-        Data update is triggered from BMWConnectedDriveEntity.
-        """
-        return False
+        icon = self._config[ATTR_ICON]
+        if isinstance(icon, dict):
+            return icon[self._state]
 
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor.
-
-        The return type of this call depends on the attribute that
-        is configured.
-        """
-        return self._state
-
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self._available
-
-    @property
-    def icon(self):
-        """Icon to use in the frontend, if any."""
-        return self._icon
+        return icon
 
     @property
     def unit_of_measurement(self) -> str:
         """Get the unit of measurement."""
-        return self._unit
+        return self._config[ATTR_UNITS]
 
     @property
-    def device_state_attributes(self):
-        """Return the state attributes of the sensor."""
-        return {
-            'car': self._vehicle.name
-        }
+    def state(self):
+        """"""
+        return self._state
 
-    def update(self) -> None:
-        """Read new state data from the library."""
-        _LOGGER.debug('Updating %s', self._vehicle.name)
-        vehicle_state = self._vehicle.state
+    @callback
+    def _update_callback(self, force=False):
+        """"""
+        try:
+            state = None
+            if self._device.is_online or not self.is_connection_sensitive:
+                state = getattr(self._device, self.device_attr)
+                formatter = self._config.get(ATTR_FORMATTER)
+                state = formatter(state) if formatter else state
+                available = True
+            else:
+                available = False
 
-        if vehicle_state.online == 1 or self._state_sensitive == False:
-            self._available = True
-            self._state = getattr(vehicle_state, self._parameter)
-        else:
-            self._available = False
-
-    def update_callback(self):
-        """Schedule a state update."""
-        self.schedule_update_ha_state(True)
+            if self._state != state or self._available != available:
+                self._state = state
+                self._available = available
+                self.async_write_ha_state()
+        except KeyError:
+            _LOGGER.warning("%s: can't get data from linked device", self.name)
 
     async def async_added_to_hass(self):
-        """Add callback after being added to hass.
+        """When entity is added to hass."""
 
-        Show latest data after startup.
-        """
-        self._account.add_update_listener(self.update_callback)
+        self.async_on_remove(self._hass.data[DOMAIN].async_add_listener(self._update_callback))
+        self._update_callback(True)

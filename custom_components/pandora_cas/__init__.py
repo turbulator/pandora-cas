@@ -1,142 +1,133 @@
 """
-Reads vehicle status from BMW connected drive portal.
+TODO
 
-For more details about this platform, please refer to the documentation at
-https://home-assistant.io/components/bmw_connected_drive/
+DETAILS
 """
+import asyncio
 import logging
-from datetime import datetime, timedelta
+import sys
 
-import voluptuous as vol
-
-from homeassistant.const import (CONF_USERNAME, CONF_PASSWORD)
-from homeassistant.helpers import discovery
-from homeassistant.helpers.event import track_time_interval
 import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+from homeassistant import config_entries
+from homeassistant.config_entries import SOURCE_DISCOVERY, ConfigEntry
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.helpers import discovery
+from homeassistant.helpers.event import async_track_time_interval, track_time_interval
+from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-REQUIREMENTS = []
+from .api import PandoraApi, PandoraApiException
+from .const import (
+    DOMAIN,
+    CONF_POLLING_INTERVAL,
+    DEFAULT_POLLING_INTERVAL,
+    MIN_POLLING_INTERVAL,
+    ATTR_SCHEMA,
+    ATTR_ID,
+    ATTR_COMMAND,
+)
+
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = 'pandora_cas'
-CONF_POLLING_INTERVAL = 'polling_interval'
-MIN_POLLING_INTERVAL = timedelta(seconds = 10)
-DEFAULT_POLLING_INTERVAL = timedelta(minutes = 1)
-CONF_READ_ONLY = 'read_only'
-ATTR_ID = 'id'
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_POLLING_INTERVAL, default = DEFAULT_POLLING_INTERVAL): (
-                            vol.All(cv.time_period, vol.Clamp(min = MIN_POLLING_INTERVAL))
-                       ),
-    }),
-}, extra=vol.ALLOW_EXTRA)
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_USERNAME): cv.string,
+                vol.Required(CONF_PASSWORD): cv.string,
+                vol.Optional(CONF_POLLING_INTERVAL, default=DEFAULT_POLLING_INTERVAL): (
+                    vol.All(cv.time_period, vol.Clamp(min=MIN_POLLING_INTERVAL))
+                ),
+            }
+        ),
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
-SERVICE_SCHEMA = vol.Schema({
-    vol.Required(ATTR_ID): cv.string,
-})
+SERVICE_SCHEMA = vol.Schema({vol.Required(ATTR_ID): cv.string,})
 
-
-PANDORA_COMPONENTS = ['device_tracker', 'binary_sensor', 'sensor']
-
-SERVICE_UPDATE_STATE = 'update_state'
-
-
-_SERVICE_MAP = {
-    'lock': 'trigger_remote_lock',
-    'unlock': 'trigger_remote_unlock',
-    'start_engine': 'trigger_remote_start_engine',
-    'stop_engine': 'trigger_remote_stop_engine',
-    'turn_on_coolant_heater': 'trigger_remote_turn_on_coolant_heater',
-    'turn_off_coolant_heater': 'trigger_remote_turn_off_coolant_heater',
-    'turn_on_ext_channel': 'trigger_remote_turn_on_ext_channel',
-    'turn_off_ext_channel': 'trigger_remote_turn_off_ext_channel',
+SERVICE_MAP = {
+    "lock": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "1"},
+    "unlock": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "2"},
+    "start_engine": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "4"},
+    "stop_engine": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "8"},
+    "turn_on_coolant_heater": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "21"},
+    "turn_off_coolant_heater": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "22"},
+    "turn_on_ext_channel": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "33"},
+    "turn_off_ext_channel": {ATTR_SCHEMA: SERVICE_SCHEMA, ATTR_COMMAND: "34"},
 }
 
-def setup(hass, config: dict):
-    """Set up the BMW connected drive components."""
 
-    hass.data[DOMAIN] = setup_account(config[DOMAIN], hass)
+PANDORA_CAS_PLATFORMS = ["sensor", "binary_sensor", "device_tracker"]
 
-    def _update_all(call) -> None:
-        """Update all pandora accounts."""
-        hass.data[DOMAIN].update()
 
-    # Service to manually trigger updates for all accounts.
-    hass.services.register(DOMAIN, SERVICE_UPDATE_STATE, _update_all)
+async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
+    """Activate Pandora Car Alarm System component"""
 
-    _update_all(None)
+    hass.data[DOMAIN] = {}
+    if DOMAIN not in config:
+        return True
 
-    for component in PANDORA_COMPONENTS:
-        discovery.load_platform(hass, component, DOMAIN, {}, config)
+    async def _execute_service(call) -> bool:
+        api = hass.data[DOMAIN]
+        if api is not None:
+            await api.async_service(call.data[ATTR_ID], SERVICE_MAP[call.service][ATTR_COMMAND])
+
+    for service, service_config in SERVICE_MAP.items():
+        hass.services.async_register(
+            DOMAIN, service, _execute_service, schema=service_config[ATTR_SCHEMA],
+        )
+
+    try:
+        domain_config = config.get(DOMAIN, {})
+
+        # Convert timedelta to seconds
+        seconds = domain_config[CONF_POLLING_INTERVAL].total_seconds()
+        domain_config.pop(CONF_POLLING_INTERVAL, None)
+        domain_config[CONF_POLLING_INTERVAL] = seconds
+
+        if not hass.config_entries.async_entries(DOMAIN):
+            hass.async_create_task(
+                hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_DISCOVERY}, data=domain_config)
+            )
+    except KeyError:
+        _LOGGER.warning("Import %s failed", DOMAIN)
 
     return True
 
 
-def setup_account(account_config: dict, hass) \
-        -> 'PandoraOnlineAccount':
-    """Set up a new BMWConnectedDriveAccount based on the config."""
-    username = account_config[CONF_USERNAME]
-    password = account_config[CONF_PASSWORD]
-    polling_interval = account_config[CONF_POLLING_INTERVAL]
+async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+    """Setup configuration entry for Pandora Car Alarm System."""
 
-    po_account = PandoraOnlineAccount(username, password)
+    username = config_entry.data[CONF_USERNAME]
+    password = config_entry.data[CONF_PASSWORD]
+    polling_interval = config_entry.data[CONF_POLLING_INTERVAL]
 
-    def execute_service(call):
-        """Execute a service for a vehicle.
+    _LOGGER.debug("Setting up entry %s for account %s", config_entry.entry_id, username)
 
-        This must be a member function as we need access to the cd_account
-        object here.
-        """
-        id = call.data[ATTR_ID]
-        vehicle = po_account.account.get_vehicle(id)
-        if not vehicle:
-            _LOGGER.error('Could not find a vehicle for id "%s"!', id)
-            return
-        function_name = _SERVICE_MAP[call.service]
-        function_call = getattr(vehicle.remote_services, function_name)
-        function_call()
+    try:
+        api = hass.data[DOMAIN] = PandoraApi(hass, username, password, polling_interval)
+        await api.load_devices()
+        await api.async_refresh()
+    except PandoraApiException as ex:
+        _LOGGER.error("Setting up entry %s failed: %s", username, str(ex))
+        return False
 
-    # register the remote services
-    for service in _SERVICE_MAP:
-        hass.services.register(
-            DOMAIN, service,
-            execute_service,
-            schema=SERVICE_SCHEMA)
+    for platform in PANDORA_CAS_PLATFORMS:
+        hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, platform))
 
-    track_time_interval(hass, po_account.update, polling_interval)
-
-    return po_account
+    return True
 
 
-class PandoraOnlineAccount:
-    """Representation of a Pandora Online vehicle."""
+async def async_unload_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+    """Unload the config entry and platforms."""
+    hass.data.pop(DOMAIN)
 
-    def __init__(self, username: str, password: str) -> None:
-        """Constructor."""
-        from .api.account import PandoraOnlineAccount
+    tasks = []
+    for platform in PANDORA_CAS_PLATFORMS:
+        tasks.append(hass.config_entries.async_forward_entry_unload(config_entry, platform))
 
-        self.account = PandoraOnlineAccount(username, password)
-        self._update_listeners = []
-
-    def update(self, *_):
-        """Update the state of all vehicles.
-
-        Notify all listeners about the update.
-        """
-        _LOGGER.debug('Updating vehicle state, notifying %d listeners',
-                      len(self._update_listeners))
-        try:
-            self.account.update_vehicle_states()
-            for listener in self._update_listeners:
-                listener()
-        except IOError as exception:
-            _LOGGER.error('Error updating the vehicle state.')
-            _LOGGER.exception(exception)
-
-    def add_update_listener(self, listener):
-        """Add a listener for update notifications."""
-        self._update_listeners.append(listener)
+    return all(await asyncio.gather(*tasks))

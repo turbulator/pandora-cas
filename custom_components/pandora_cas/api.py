@@ -1,4 +1,6 @@
 """Pandora Car Alarm System API."""
+
+import asyncio
 import logging
 from datetime import timedelta
 from json import JSONDecodeError
@@ -22,11 +24,14 @@ HOST = "p-on.ru"
 BASE_URL = "https://" + HOST
 LOGIN_PATH = "/api/users/login"
 DEVICES_PATH = "/api/devices"
-UPDATE_PATH = "/api/updates?ts=-1"
+UPDATE_PATH = "/api/updates?ts="
 COMMAND_PATH = "/api/devices/command"
 
-
 USER_AGENT = "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0"
+
+FORCE_UPDATE_INTERVAL = 300
+DENSE_POLLING_INTERVAL = 1
+COMMAND_RESPONSE_TIMEOUT = 35
 
 
 class PandoraApiException(Exception):
@@ -43,6 +48,10 @@ class PandoraApi:
         self._password = password
         self._session = None
         self._session_id = None
+        self._update_ts = 0
+        self._force_update_ts = 0
+        self._command_response = asyncio.Event()
+        self._dense_poll = False
         self._devices = {}
         self._coordinator = DataUpdateCoordinator(
             hass,
@@ -58,16 +67,18 @@ class PandoraApi:
 
         return self._devices
 
-    async def _request(self, path, data=None, method="GET"):
+    async def _request(self, path, method="GET", data=None):
         """Request an information from server."""
 
         url = BASE_URL + path
+        # Heve to do it here because async_create_clientsession uses self User-Agent which rejects by p-on.ru
         headers = {"User-Agent": USER_AGENT}
+
+        _LOGGER.debug("Request: %s", url)
 
         try:
             async with self._session.request(method, url, data=data, headers=headers) as response:
-                _LOGGER.debug("Response HTTP Status Code: %d", response.status)
-                _LOGGER.debug("Response HTTP Response Body: %s", await response.text())
+                _LOGGER.debug("Response Code: %d, Body: %s", response.status, await response.text())
 
                 # Responses should be JSON
                 j = await response.json()
@@ -99,13 +110,13 @@ class PandoraApi:
 
         data = {"login": self._username, "password": self._password, "lang": "ru"}
 
-        response = await self._request(LOGIN_PATH, data=data, method="POST")
+        response = await self._request(LOGIN_PATH, method="POST", data=data)
         # _session_id isn't used now
         self._session_id = PandoraApiLoginResponseParser(response).session_id
 
         _LOGGER.info("Login successful")
 
-    async def _request_safe(self, path, data=None, method="GET", relogin=False):
+    async def _request_safe(self, path, method="GET", data=None, relogin=False):
         """ High-level request function.
 
         It will make login on server if it isn't done before.
@@ -116,7 +127,7 @@ class PandoraApi:
             self._session_id = None
             await self.login()
 
-        response = await self._request(path, data, method)
+        response = await self._request(path, method=method, data=data)
 
         if "status" in response:
             if response["status"] in {
@@ -125,7 +136,7 @@ class PandoraApi:
                 "sid-expired",
             }:
                 _LOGGER.info("PandoraApi: %s. Making relogin.", response["error_text"])
-                response = await self._request_safe(path, data, method=method, relogin=True)
+                response = await self._request_safe(path, method=method, data=data, relogin=True)
 
         return response
 
@@ -144,10 +155,27 @@ class PandoraApi:
         """Update attributes of devices."""
 
         try:
-            response = PandoraApiUpdateResponseParser(await self._request_safe(UPDATE_PATH)).update
+            if self._update_ts >= self._force_update_ts + FORCE_UPDATE_INTERVAL:
+                self._update_ts = 0
+
+            response = PandoraApiUpdateResponseParser(
+                await self._request_safe(UPDATE_PATH + str(self._update_ts - 1))
+            )
+            
+            stats = response.stats
+            if self._update_ts == 0:
+                self._force_update_ts = self._update_ts = response.timestamp
+            else:
+                self._update_ts = response.timestamp
+
+            # UCR means that device received the command and sent response (user command response?)
+            # Lot's of commands executes quick: like on/off tracking, ext. cannel and so on.
+            # And only engine_start requires additional 10-15 seconds on device side.
+            if response.ucr is not None:
+                self._command_response.set()
 
             try:
-                for pandora_id, attrs in response.items():
+                for pandora_id, attrs in stats.items():
                     await self._devices[pandora_id].update(attrs)
             except KeyError:
                 _LOGGER.info("Got data for unexpected PANDORA_ID '%s'. Skipping...", pandora_id)
@@ -155,27 +183,6 @@ class PandoraApi:
         except PandoraApiException as ex:
             _LOGGER.info("Update failed: %s", str(ex))
 
-        return True
-
-    async def async_command(self, pandora_id: str, command: str):
-        """Send the command to device.
-
-        The response should be like this: {"PANDORA_ID": "sent"}. PANDORA_ID must be the same as in request.
-        Finally, the series of refreshes is scheduled. It will help to process sensors more accurately.
-        """
-
-        data = {"id": pandora_id, "command": command}
-
-        status = PandoraApiCommandResponseParser(
-            await self._request_safe(COMMAND_PATH, data=data, method="POST")
-        ).result[pandora_id]
-
-        if status != "sent":
-            _LOGGER.warning("async_command: %s", status)
-            raise PandoraApiException(status)
-
-        async def _handle_refresh(*_):
-            await self._coordinator.async_refresh()
 
         # I made some experiments with my car. How long does it take between sending command
         # and getting proper state of corresponding entity?  Results is placed below:
@@ -183,13 +190,57 @@ class PandoraApi:
         # Stop engine: about 10s
         # Start engine: about 25s
         # ----------------------------------------------------------------------------------
-        # Ten updates from 10-th to 30-th second with 2 second pause will enough, I think.
+        # Pandora makes one request per second until ucr receives. Timeout - 35 seconds
 
-        now = utcnow().replace(microsecond=0)
-        for delay in range(10, 30, 2):
-            async_track_point_in_utc_time(self._hass, _handle_refresh, now + timedelta(seconds=delay))
+        async def _force_refresh(*_):
+            await self._coordinator.async_refresh()
+
+        if self._dense_poll > 0:
+            self._dense_poll -= 1
+            now = utcnow().replace(microsecond=0)
+            async_track_point_in_utc_time(self._hass, _force_refresh, now + timedelta(seconds=DENSE_POLLING_INTERVAL))
+
+        return True
+
+    async def async_command(self, pandora_id: str, command: str) -> bool:
+        """Send the command to device.
+
+        The response should be like this: {"PANDORA_ID": "sent"}. PANDORA_ID must be the same as in request.
+        """
+
+        if self._dense_poll:
+            raise PandoraApiException("Awaiting previous command")
+
+        self._dense_poll = COMMAND_RESPONSE_TIMEOUT
+        self._command_response.clear()
+
+        data = {"id": pandora_id, "command": command}
+
+        try:
+            status = PandoraApiCommandResponseParser(
+                await self._request_safe(COMMAND_PATH, method="POST", data=data)
+            ).result[pandora_id]
+
+            if status != "sent":
+                raise PandoraApiException(status)
+        except PandoraApiException as ex:
+            self._dense_poll = 0
+            _LOGGER.debug("async_command: %s", str(ex))
+            raise PandoraApiException(str(ex)) from None
 
         _LOGGER.info("Command %s is sent to device %s", command, pandora_id)
+
+        try:
+            await asyncio.wait_for(self._command_response.wait(), COMMAND_RESPONSE_TIMEOUT)
+        except asyncio.TimeoutError as ex:
+            self._dense_poll = 0
+            _LOGGER.warning("async_command: command timeout")
+            raise PandoraApiException(str(ex)) from None
+
+        self._dense_poll = 0
+        _LOGGER.info("Got response for command %s on device %s", command, pandora_id)
+
+        return True
 
     async def async_refresh(self):
         """Refresh data through update coordinator helper."""
@@ -340,7 +391,7 @@ class PandoraApiUpdateResponseParser:
     """
     {
         "ts":1599698262,
-        "lenta": [{
+        "lenta": [{  <--- The list of events
             "type": 0,
             "time": 1600553265,
             "obj": {
@@ -426,7 +477,7 @@ class PandoraApiUpdateResponseParser:
                 "engine_remains":0
             }
         },
-        "ucr":{  <--- what does it mean?
+        "ucr":{  <--- what does it mean? User command response?
             "1234":3
         }
     }
@@ -449,7 +500,7 @@ class PandoraApiUpdateResponseParser:
         r.b_sensor_alert_zone = bb.shiftRight(13).and(1).toJSNumber(); // Отключен контроль датчика удара, предупредительная зона
         r.b_sensor_main_zone = bb.shiftRight(14).and(1).toJSNumber(); // Отключен контроль датчика удара, основная зона
         r.b_autostart = bb.shiftRight(15).and(1).toJSNumber(); // Запрограммирован АЗ двигателя
-        
+
         r.b_sms = bb.shiftRight(16).and(1).toJSNumber(); // Разрешена отправка СМС – сообщений
         r.b_call = bb.shiftRight(17).and(1).toJSNumber(); // Разрешены голосовые вызовы
         r.b_light = bb.shiftRight(18).and(1).toJSNumber(); // Включены габаритные огни (фары, свет.)
@@ -476,7 +527,9 @@ class PandoraApiUpdateResponseParser:
     """
 
     def __init__(self, response):
-        self.update = response["stats"]
+        self.stats = response.get("stats")
+        self.ucr = response.get("ucr")
+        self.timestamp = response.get("ts")
 
 
 class PandoraApiCommandResponseParser:

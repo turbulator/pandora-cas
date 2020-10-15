@@ -27,5 +27,25 @@
             }
         },
         "title": "Pandora Car Alarm System"
+    },
+    "options": {
+        "step": {
+            "device": {
+                "data": {
+                    "pandora_id": "Pandora ID"
+                },
+                "title": "Настройка Pandora CAS",
+                "description": "Выберите устройство для настройки"
+            },
+            "options": {
+                "data": {
+                    "fuel_units": "Отображение топлива",
+                    "mileage_source": "Источник пробега",
+                    "mileage_adjustment": "Корректировка пробега"
+                },
+                "title": "Настройка Pandora CAS",
+                "description": "Задайте параметры для {name}"
+            }
+        }
     }
 }

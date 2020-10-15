@@ -112,6 +112,12 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
         api = hass.data[DOMAIN] = PandoraApi(hass, username, password, polling_interval)
         await api.load_devices()
         await api.async_refresh()
+
+        # Save options which got from config_entry
+        for pandora_id, options in config_entry.options.items():
+            if pandora_id in api.devices.keys():
+                await api.devices[pandora_id].config_options(options)
+
     except PandoraApiException as ex:
         _LOGGER.error("Setting up entry %s failed: %s", username, str(ex))
         return False

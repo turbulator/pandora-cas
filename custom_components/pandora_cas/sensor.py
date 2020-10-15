@@ -7,7 +7,7 @@ import logging
 
 from homeassistant.components.sensor import ENTITY_ID_FORMAT, DEVICE_CLASS_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME, LENGTH_KILOMETERS, TEMP_CELSIUS
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME, LENGTH_KILOMETERS, PERCENTAGE, TEMP_CELSIUS
 from homeassistant.core import callback
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
@@ -24,7 +24,7 @@ ENTITY_CONFIGS = {
     "mileage": {
         ATTR_NAME: "mileage",
         ATTR_ICON: "mdi:map-marker-distance",
-        ATTR_DEVICE_CLASS: None, # TODO: Make propper device class
+        ATTR_DEVICE_CLASS: None,  # TODO: Make propper device class
         ATTR_UNITS: LENGTH_KILOMETERS,
         ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "mileage",
@@ -34,7 +34,7 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "fuel",
         ATTR_ICON: "mdi:gauge",
         ATTR_DEVICE_CLASS: None,
-        ATTR_UNITS: "%",
+        ATTR_UNITS: PERCENTAGE,
         ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "fuel",
     },
@@ -133,6 +133,10 @@ class PandoraSensorEntity(PandoraEntity):
         super().__init__(hass, device, entity_id, entity_config)
 
         self.entity_id = self.ENTITY_ID_FORMAT.format("{}_{}".format(slugify(device.pandora_id), entity_id))
+
+        user_defined_units = device.user_defined_units(self.device_attr)
+        if user_defined_units is not None:
+            self._config[ATTR_UNITS] = user_defined_units
 
     @property
     def icon(self) -> str:

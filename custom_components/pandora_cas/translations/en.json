@@ -27,5 +27,25 @@
             }
         },
         "title": "Pandora Car Alarm System"
+    },
+    "options": {
+        "step": {
+            "device": {
+                "data": {
+                    "pandora_id": "Pandora ID"
+                },
+                "title": "Pandora CAS settings",
+                "description": "Select device for setup"
+            },
+            "options": {
+                "data": {
+                    "fuel_units": "Fuel units",
+                    "mileage_source": "Mileage source",
+                    "mileage_adjustment": "Mileage adjustment"
+                },
+                "title": "Pandora CAS settings",
+                "description": "Options for {name}"
+            }
+        }
     }
 }

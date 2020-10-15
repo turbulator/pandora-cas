@@ -8,13 +8,21 @@ from typing import Callable
 
 import aiohttp
 from homeassistant.core import CALLBACK_TYPE, callback
+from homeassistant.const import PERCENTAGE
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.dt import utcnow
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    MILEAGE_SOURCES,
+    OPTION_FUEL_UNITS,
+    OPTION_MILEAGE_SOURCE,
+    OPTION_MILEAGE_ADJUSTMENT,
+    FUEL_UNITS,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -158,10 +166,8 @@ class PandoraApi:
             if self._update_ts >= self._force_update_ts + FORCE_UPDATE_INTERVAL:
                 self._update_ts = 0
 
-            response = PandoraApiUpdateResponseParser(
-                await self._request_safe(UPDATE_PATH + str(self._update_ts - 1))
-            )
-            
+            response = PandoraApiUpdateResponseParser(await self._request_safe(UPDATE_PATH + str(self._update_ts - 1)))
+
             stats = response.stats
             if self._update_ts == 0:
                 self._force_update_ts = self._update_ts = response.timestamp
@@ -182,7 +188,6 @@ class PandoraApi:
 
         except PandoraApiException as ex:
             _LOGGER.info("Update failed: %s", str(ex))
-
 
         # I made some experiments with my car. How long does it take between sending command
         # and getting proper state of corresponding entity?  Results is placed below:
@@ -278,19 +283,32 @@ class PandoraDevice:
         return bool(self.online)
 
     @property
-    def fuel_tank(self) -> int:
-        """Get the capacity of fuel tank."""
-        return int(self._info["fuel_tank"])
+    def fuel_percentage(self) -> int:
+        """Get fuel in percentage."""
+        return int(self._attributes["fuel"])
+
+    @property
+    def fuel_litres(self) -> int:
+        """Get fuel in liters."""
+        return int(self._info["fuel_tank"]) * self.fuel_percentage / 100
+
+    @property
+    def fuel(self) -> int:
+        """Get fuel in user-defined units."""
+        if self._info.get(OPTION_FUEL_UNITS, FUEL_UNITS[0]) == FUEL_UNITS[0]:
+            return self.fuel_percentage
+
+        return self.fuel_litres
 
     @property
     def mileage(self) -> float:
-        """Get the mileage."""
+        """Get mileage from user-defined source with user-defined adjustment."""
+        adjustment = float(self._info.get(OPTION_MILEAGE_ADJUSTMENT, 0))
 
-        # mileage_CAN will be used if supported
-        if self._attributes["mileage_CAN"] > 0:
-            return float(self._attributes["mileage_CAN"])
+        if self._info.get(OPTION_MILEAGE_SOURCE, MILEAGE_SOURCES[0]) == MILEAGE_SOURCES[0]:
+            return adjustment + float(self._attributes["mileage"])
 
-        return float(self._attributes["mileage"])
+        return adjustment + float(self._attributes["mileage_CAN"])
 
     @property
     def device_info(self) -> dict:
@@ -303,9 +321,17 @@ class PandoraDevice:
             "sw_version": self._info["firmware"],
         }
 
+    def user_defined_units(self, item):
+        """Get units of attribute."""
+        return self._info.get(item + "_units")
+
     def __getattr__(self, item):
         """Generic get function for all backend attributes."""
         return self._attributes[item]
+
+    async def config_options(self, options: dict) -> None:
+        """Save options from config_entry."""
+        self._info.update(options)
 
     async def update(self, attributes: dict) -> None:
         """Read new status data from the server."""

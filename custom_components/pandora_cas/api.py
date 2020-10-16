@@ -283,6 +283,16 @@ class PandoraDevice:
         return int(self._info["fuel_tank"])
 
     @property
+    def mileage(self) -> float:
+        """Get the mileage."""
+
+        # mileage_CAN will be used if supported
+        if self._attributes["mileage_CAN"] > 0:
+            return float(self._attributes["mileage_CAN"])
+
+        return float(self._attributes["mileage"])
+
+    @property
     def device_info(self) -> dict:
         """Unified device info dictionary."""
         return {

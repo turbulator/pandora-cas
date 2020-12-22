@@ -10,7 +10,7 @@ from typing import Optional
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import CONN_CLASS_CLOUD_POLL
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, PERCENTAGE
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (

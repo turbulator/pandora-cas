@@ -8,7 +8,6 @@ from typing import Callable
 
 import aiohttp
 from homeassistant.core import CALLBACK_TYPE, callback
-from homeassistant.const import PERCENTAGE
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.typing import HomeAssistantType

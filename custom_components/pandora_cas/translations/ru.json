@@ -41,7 +41,8 @@
                 "data": {
                     "fuel_units": "Отображение топлива",
                     "mileage_source": "Источник пробега",
-                    "mileage_adjustment": "Корректировка пробега"
+                    "mileage_adjustment": "Корректировка пробега",
+                    "expire_after": "Таймаут недоступности"
                 },
                 "title": "Настройка Pandora CAS",
                 "description": "Задайте параметры для {name}"

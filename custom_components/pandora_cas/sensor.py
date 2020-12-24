@@ -26,7 +26,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:map-marker-distance",
         ATTR_DEVICE_CLASS: None,  # TODO: Make propper device class
         ATTR_UNITS: LENGTH_KILOMETERS,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "mileage",
         ATTR_FORMATTER: lambda v: round(float(v), 2),
     },
@@ -35,7 +34,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:gauge",
         ATTR_DEVICE_CLASS: None,
         ATTR_UNITS: PERCENTAGE,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "fuel",
     },
     "cabin_temperature": {
@@ -43,7 +41,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:thermometer",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_UNITS: TEMP_CELSIUS,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "cabin_temp",
     },
     "engine_temperature": {
@@ -51,7 +48,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:thermometer",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_UNITS: TEMP_CELSIUS,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "engine_temp",
     },
     "ambient_temperature": {
@@ -59,7 +55,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:thermometer",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
         ATTR_UNITS: TEMP_CELSIUS,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "out_temp",
     },
     "balance": {
@@ -76,7 +71,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:gauge",
         ATTR_DEVICE_CLASS: None,
         ATTR_UNITS: "km/h",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "speed",
         ATTR_FORMATTER: lambda v: round(float(v), 1),
     },
@@ -85,7 +79,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:gauge",
         ATTR_DEVICE_CLASS: None,
         ATTR_UNITS: None,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "engine_rpm",
     },
     "gsm_level": {
@@ -93,7 +86,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:network-strength-2",
         ATTR_DEVICE_CLASS: None,
         ATTR_UNITS: None,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "gsm_level",
     },
     "battery_voltage": {
@@ -101,7 +93,6 @@ ENTITY_CONFIGS = {
         ATTR_ICON: "mdi:car-battery",
         ATTR_DEVICE_CLASS: None,
         ATTR_UNITS: "V",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "voltage",
     },
 }
@@ -161,19 +152,20 @@ class PandoraSensorEntity(PandoraEntity):
     @callback
     def _update_callback(self, force=False):
         """"""
+        api = self._hass.data[DOMAIN]
         try:
-            state = None
-            if self._device.is_online or not self.is_connection_sensitive:
-                state = getattr(self._device, self.device_attr)
-                formatter = self._config.get(ATTR_FORMATTER)
-                state = formatter(state) if formatter else state
-                available = True
-            else:
-                available = False
+            state = getattr(self._device, self.device_attr)
+            formatter = self._config.get(ATTR_FORMATTER)
+            state = formatter(state) if formatter else state
 
-            if self._state != state or self._available != available:
+            if self.is_connection_sensitive:
+                expired = api.timestamp - self._device.timestamp > self._device.expire_after
+            else:
+                expired = False
+
+            if self._state != state or self._expired != expired:
                 self._state = state
-                self._available = available
+                self._expired = expired
                 self.async_write_ha_state()
         except KeyError:
             _LOGGER.warning("%s: can't get data from linked device", self.name)

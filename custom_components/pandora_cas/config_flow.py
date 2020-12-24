@@ -22,6 +22,7 @@ from .const import (
     OPTION_FUEL_UNITS,
     OPTION_MILEAGE_SOURCE,
     OPTION_MILEAGE_ADJUSTMENT,
+    OPTION_EXPIRE_AFTER,
     FUEL_UNITS,
 )
 
@@ -143,7 +144,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return await self.async_step_device()
 
     async def async_step_device(self, user_input=None):
-        IDS = []
+        devices = []
         api = self.hass.data[DOMAIN]
 
         if user_input is not None:
@@ -151,10 +152,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return await self.async_step_options()
 
         for pandora_id in api.devices.keys():
-            IDS.append(pandora_id)
+            devices.append(pandora_id)
 
         fields = OrderedDict()
-        fields[vol.Required(PANDORA_ID, default=IDS[0])] = vol.In(IDS)
+        fields[vol.Required(PANDORA_ID, default=devices[0])] = vol.In(devices)
 
         return self.async_show_form(step_id="device", data_schema=vol.Schema(fields))
 
@@ -170,6 +171,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 OPTION_MILEAGE_SOURCE, MILEAGE_SOURCES[0]
             )
             device_options[self.pandora_id][OPTION_MILEAGE_ADJUSTMENT] = user_input.get(OPTION_MILEAGE_ADJUSTMENT, 0)
+            device_options[self.pandora_id][OPTION_EXPIRE_AFTER] = user_input.get(OPTION_EXPIRE_AFTER, 0)
             self.options.update(device_options)
             self.pandora_id = None  # invalidate pandora_id
             return self.async_create_entry(title="", data=self.options)
@@ -180,6 +182,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             fields[vol.Optional(OPTION_FUEL_UNITS, default=FUEL_UNITS[0])] = vol.In(FUEL_UNITS)
             fields[vol.Optional(OPTION_MILEAGE_SOURCE, default=MILEAGE_SOURCES[0])] = vol.In(MILEAGE_SOURCES)
             fields[vol.Optional(OPTION_MILEAGE_ADJUSTMENT, default=0)] = vol.Coerce(int)
+            fields[vol.Optional(OPTION_EXPIRE_AFTER, default=0)] = vol.Coerce(int)
         else:
             fields[
                 vol.Optional(OPTION_FUEL_UNITS, default=device_options.get(OPTION_FUEL_UNITS, FUEL_UNITS[0]))
@@ -191,6 +194,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ] = vol.In(MILEAGE_SOURCES)
             fields[
                 vol.Optional(OPTION_MILEAGE_ADJUSTMENT, default=device_options.get(OPTION_MILEAGE_ADJUSTMENT, 0))
+            ] = vol.Coerce(int)
+            fields[
+                vol.Optional(OPTION_EXPIRE_AFTER, default=device_options.get(OPTION_EXPIRE_AFTER, 0))
             ] = vol.Coerce(int)
 
         return self.async_show_form(

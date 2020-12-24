@@ -39,7 +39,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "engine",
         ATTR_ICON: {True: "mdi:fan", False: "mdi:fan-off"},
         ATTR_DEVICE_CLASS: "pandora_cas__engine",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 2,
         ATTR_INVERSE: 0,
@@ -48,7 +47,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "moving",
         ATTR_ICON: None,
         ATTR_DEVICE_CLASS: "pandora_cas__moving",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "move",
         ATTR_SHIFT_BITS: 0,
         ATTR_INVERSE: 0,
@@ -57,7 +55,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "guard",
         ATTR_ICON: {True: "mdi:shield-off", False: "mdi:shield-check"},
         ATTR_DEVICE_CLASS: "pandora_cas__guard",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 0,
         ATTR_INVERSE: 1,
@@ -66,7 +63,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "front left door",
         ATTR_ICON: "mdi:car-door",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 21,
         ATTR_INVERSE: 0,
@@ -75,7 +71,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "front right door",
         ATTR_ICON: "mdi:car-door",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 22,
         ATTR_INVERSE: 0,
@@ -84,7 +79,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "back left door",
         ATTR_ICON: "mdi:car-door",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 23,
         ATTR_INVERSE: 0,
@@ -93,7 +87,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "back right door",
         ATTR_ICON: "mdi:car-door",
         ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 24,
         ATTR_INVERSE: 0,
@@ -102,7 +95,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "trunk",
         ATTR_ICON: "mdi:car-back",
         ATTR_DEVICE_CLASS: "pandora_cas__door_male",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 25,
         ATTR_INVERSE: 0,
@@ -111,7 +103,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "hood",
         ATTR_ICON: "mdi:car",
         ATTR_DEVICE_CLASS: "pandora_cas__door_male",
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 26,
         ATTR_INVERSE: 0,
@@ -120,7 +111,6 @@ ENTITY_CONFIGS = {
         ATTR_NAME: "coolant heater",
         ATTR_ICON: {True: "mdi:thermometer-plus", False: "mdi:thermometer"},
         ATTR_DEVICE_CLASS: None,
-        ATTR_IS_CONNECTION_SENSITIVE: True,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 29,
         ATTR_INVERSE: 0,
@@ -185,18 +175,21 @@ class PandoraBinarySensorEntity(PandoraEntity, BinarySensorEntity):
     @callback
     def _update_callback(self, force=False):
         """"""
+        api = self._hass.data[DOMAIN]
         try:
-            state = False
-            if self._device.is_online or not self.is_connection_sensitive:
-                if (int(getattr(self._device, self.device_attr)) >> self.shift_bits) & 1 ^ self.inverse:
-                    state = True
-                available = True
+            if (int(getattr(self._device, self.device_attr)) >> self.shift_bits) & 1 ^ self.inverse:
+                state = True
             else:
-                available = False
+                state = False
 
-            if self._state != state or self._available != available:
+            if self.is_connection_sensitive:
+                expired = api.timestamp - self._device.timestamp > self._device.expire_after
+            else:
+                expired = False
+
+            if self._state != state or self._expired != expired:
                 self._state = state
-                self._available = available
+                self._expired = expired
                 self.async_write_ha_state()
         except KeyError:
             _LOGGER.warning("%s: can't get data from linked device", self.name)

@@ -20,6 +20,7 @@ from .const import (
     OPTION_FUEL_UNITS,
     OPTION_MILEAGE_SOURCE,
     OPTION_MILEAGE_ADJUSTMENT,
+    OPTION_EXPIRE_AFTER,
     FUEL_UNITS,
 )
 
@@ -73,6 +74,12 @@ class PandoraApi:
         """Accessor"""
 
         return self._devices
+
+    @property
+    def timestamp(self) -> int:
+        """Get last update timestamp."""
+
+        return self._update_ts
 
     async def _request(self, path, method="GET", data=None):
         """Request an information from server."""
@@ -169,9 +176,8 @@ class PandoraApi:
 
             stats = response.stats
             if self._update_ts == 0:
-                self._force_update_ts = self._update_ts = response.timestamp
-            else:
-                self._update_ts = response.timestamp
+                self._force_update_ts = response.timestamp
+            self._update_ts = response.timestamp
 
             # UCR means that device received the command and sent response (user command response?)
             # Lot's of commands executes quick: like on/off tracking, ext. cannel and so on.
@@ -280,6 +286,16 @@ class PandoraDevice:
     def is_online(self) -> bool:
         """Is device online now?"""
         return bool(self.online)
+
+    @property
+    def expire_after(self) -> int:
+        """Get expiring timeout."""
+        return int(self._info.get(OPTION_EXPIRE_AFTER, 0))
+
+    @property
+    def timestamp(self) -> int:
+        """Get last update timestamp."""
+        return int(self.dtime_rec)
 
     @property
     def fuel_percentage(self) -> int:
@@ -425,7 +441,7 @@ class PandoraApiDevicesResponseParser:
 class PandoraApiUpdateResponseParser:
     """
     {
-        "ts":1599698262,
+        "ts":1599698262, <--- Current timestamp
         "lenta": [{  <--- The list of events
             "type": 0,
             "time": 1600553265,
@@ -464,7 +480,7 @@ class PandoraApiUpdateResponseParser:
                 "online":0,
                 "move":0,
                 "dtime":1599721704,
-                "dtime_rec":1599696508,
+                "dtime_rec":1599696508,  <--- timestamp of the data in stats section
                 "voltage":13.5,
                 "engine_temp":43,
                 "x":55.080632,

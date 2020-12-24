@@ -41,7 +41,8 @@
                 "data": {
                     "fuel_units": "Fuel units",
                     "mileage_source": "Mileage source",
-                    "mileage_adjustment": "Mileage adjustment"
+                    "mileage_adjustment": "Mileage adjustment",
+                    "expire_after": "Expire after"
                 },
                 "title": "Pandora CAS settings",
                 "description": "Options for {name}"

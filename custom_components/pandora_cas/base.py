@@ -30,7 +30,7 @@ class PandoraEntity(Entity):
         self._id = entity_id
         self._config = entity_config
         self._state = None
-        self._available = False
+        self._expired = True
 
     @property
     def unique_id(self) -> str:
@@ -45,7 +45,7 @@ class PandoraEntity(Entity):
     @property
     def is_connection_sensitive(self) -> bool:
         """Return the name of the binary sensor."""
-        return self._config[ATTR_IS_CONNECTION_SENSITIVE]
+        return self._config.get(ATTR_IS_CONNECTION_SENSITIVE, True)
 
     @property
     def device_attr(self) -> str:
@@ -60,7 +60,7 @@ class PandoraEntity(Entity):
     @property
     def available(self):
         """Return True if entity is available."""
-        return self._available
+        return self.is_connection_sensitive is False or not self._expired
 
     @property
     def should_poll(self) -> bool:

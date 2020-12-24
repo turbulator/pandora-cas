@@ -25,3 +25,4 @@ MILEAGE_SOURCES = ["GPS", "CAN"]
 OPTION_FUEL_UNITS = "fuel_units"
 OPTION_MILEAGE_SOURCE = "mileage_source"
 OPTION_MILEAGE_ADJUSTMENT = "mileage_adjustment"
+OPTION_EXPIRE_AFTER = "expire_after"

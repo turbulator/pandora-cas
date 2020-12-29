@@ -187,7 +187,7 @@ class PandoraApi:
 
             try:
                 for pandora_id, attrs in stats.items():
-                    await self._devices[pandora_id].update(attrs)
+                    await self._devices[pandora_id].update(attrs, response.time[pandora_id]["online"])
             except KeyError:
                 _LOGGER.info("Got data for unexpected PANDORA_ID '%s'. Skipping...", pandora_id)
 
@@ -270,6 +270,7 @@ class PandoraDevice:
         self._name = info["name"]
         self._info = info
         self._attributes = {}
+        self._online_ts = 0
         _LOGGER.info("Device %s (PANDORA_ID=%s) created", info["name"], pandora_id)
 
     @property
@@ -294,8 +295,8 @@ class PandoraDevice:
 
     @property
     def timestamp(self) -> int:
-        """Get last update timestamp."""
-        return int(self.dtime_rec)
+        """Get last online timestamp."""
+        return int(self._online_ts)
 
     @property
     def fuel_percentage(self) -> int:
@@ -348,12 +349,13 @@ class PandoraDevice:
         """Save options from config_entry."""
         self._info.update(options)
 
-    async def update(self, attributes: dict) -> None:
+    async def update(self, attributes: dict, online_ts: int) -> None:
         """Read new status data from the server."""
 
         # Update will be more suitable here. If we get empty or partial update
         # self._attributes will still contain previous data.
         self._attributes.update(attributes)
+        self._online_ts = online_ts
         _LOGGER.info("Device %s (PANDORA_ID=%s) updated", self._name, self._pandora_id)
 
 
@@ -579,6 +581,7 @@ class PandoraApiUpdateResponseParser:
 
     def __init__(self, response):
         self.stats = response.get("stats")
+        self.time = response.get("time")
         self.ucr = response.get("ucr")
         self.timestamp = response.get("ts")
 

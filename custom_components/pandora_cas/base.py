@@ -59,8 +59,14 @@ class PandoraEntity(Entity):
 
     @property
     def available(self):
-        """Return True if entity is available."""
-        return self.is_connection_sensitive is False or not self._expired
+        """Return True if entity is available.
+
+        It will be True in three cases:
+            - Entiny isn't sensitive to connection status. Like balance
+            - Selected "never expire" option
+            - Entity was updated recently and wasn't expired
+        """
+        return self.is_connection_sensitive is False or self._device.expire_after == 0 or not self._expired
 
     @property
     def should_poll(self) -> bool:

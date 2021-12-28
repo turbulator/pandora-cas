@@ -74,7 +74,7 @@ class PandoraEntity(Entity):
         return False
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
         return {"car": self._device.name}
 

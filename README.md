@@ -1,6 +1,6 @@
 # Home Assistant custom component for Pandora Car Alarm System
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 [![Donate](https://img.shields.io/badge/donate-Yandex-orange.svg)](https://money.yandex.ru/to/41001690673042)
 
 **Русский** | [English](https://github.com/turbo-lab/pandora-cas/blob/master/README_EN.md)

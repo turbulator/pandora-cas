@@ -68,6 +68,8 @@
 | binary_sensor.`PANDORA_ID`_right_back_door | Правая задняя дверь | открыта / закрыта |
 | binary_sensor.`PANDORA_ID`_trunk | Багажник | открыт / закрыт |
 | binary_sensor.`PANDORA_ID`_hood | Капот | открыт / закрыт |
+| binary_sensor.`PANDORA_ID`_parking | Стояночный тормоз (МКПП) или Parking (АКПП) | |
+| binary_sensor.`PANDORA_ID`_brakes | Педаль тормоза | нажата / отпущена |
 
 ## Команды
 

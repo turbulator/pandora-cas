@@ -115,6 +115,22 @@ ENTITY_CONFIGS = {
         ATTR_SHIFT_BITS: 29,
         ATTR_INVERSE: 0,
     },
+    "parking": {
+        ATTR_NAME: "parking",
+        ATTR_ICON: "mdi:car-brake-parking",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 27,
+        ATTR_INVERSE: 0,
+    },
+    "brakes": {
+        ATTR_NAME: "brakes",
+        ATTR_ICON: "mdi:car-brake-alert",
+        ATTR_DEVICE_CLASS: None,
+        ATTR_DEVICE_ATTR: "bit_state_1",
+        ATTR_SHIFT_BITS: 28,
+        ATTR_INVERSE: 0,
+    },
 }
 
 

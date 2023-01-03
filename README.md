@@ -55,19 +55,19 @@
 | sensor.`PANDORA_ID`_balance | Баланс СИМ-карты | ₽ |
 | sensor.`PANDORA_ID`_speed | Скорость | км/ч |
 | sensor.`PANDORA_ID`_engine_rpm | Обороты двигателя | ? |
-| sensor.`PANDORA_ID`_gsm_level | Уровень сигнала GSM| 0 - 3 |
+| sensor.`PANDORA_ID`_gsm_level | Уровень сигнала GSM | 0 - 3 |
 | sensor.`PANDORA_ID`_battery_voltage | Напряжение аккумулятора | В |
 | binary_sensor.`PANDORA_ID`_connection_state | Связь с автомобилем | есть / нет |
 | binary_sensor.`PANDORA_ID`_engine_state | Статус двигателя | запущен / заглушен |
 | binary_sensor.`PANDORA_ID`_moving | Статус движения | в движении / без движения |
 | binary_sensor.`PANDORA_ID`_lock | Статус охраны | под охраной / снят с охраны |
 | binary_sensor.`PANDORA_ID`_coolant_heater | Статус предпускового подогревателя | включен / выключен |
-| binary_sensor.`PANDORA_ID`_left_front_door | Левая передняя дверь | отрыта / закрыта |
-| binary_sensor.`PANDORA_ID`_right_front_door | Правая передняя дверь | отрыта / закрыта |
-| binary_sensor.`PANDORA_ID`_left_back_door | Левая задняя дверь | отрыта / закрыта |
-| binary_sensor.`PANDORA_ID`_right_back_door | Правая задняя дверь | отрыта / закрыта |
-| binary_sensor.`PANDORA_ID`_trunk | Багажник | отрыт / закрыт |
-| binary_sensor.`PANDORA_ID`_hood | Капот | отрыт / закрыт |
+| binary_sensor.`PANDORA_ID`_left_front_door | Левая передняя дверь | открыта / закрыта |
+| binary_sensor.`PANDORA_ID`_right_front_door | Правая передняя дверь | открыта / закрыта |
+| binary_sensor.`PANDORA_ID`_left_back_door | Левая задняя дверь | открыта / закрыта |
+| binary_sensor.`PANDORA_ID`_right_back_door | Правая задняя дверь | открыта / закрыта |
+| binary_sensor.`PANDORA_ID`_trunk | Багажник | открыт / закрыт |
+| binary_sensor.`PANDORA_ID`_hood | Капот | открыт / закрыт |
 
 ## Команды
 

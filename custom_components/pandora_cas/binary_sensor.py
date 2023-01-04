@@ -6,10 +6,9 @@ DETAILS
 import logging
 
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_CONNECTIVITY,
-    DEVICE_CLASS_DOOR,
     ENTITY_ID_FORMAT,
     BinarySensorEntity,
+    BinarySensorDeviceClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME
@@ -29,7 +28,7 @@ ENTITY_CONFIGS = {
     "connection_state": {
         ATTR_NAME: "connection",
         ATTR_ICON: None,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_CONNECTIVITY,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.CONNECTIVITY,
         ATTR_IS_CONNECTION_SENSITIVE: False,
         ATTR_DEVICE_ATTR: "online",
         ATTR_SHIFT_BITS: 0,
@@ -62,7 +61,7 @@ ENTITY_CONFIGS = {
     "left_front_door": {
         ATTR_NAME: "front left door",
         ATTR_ICON: "mdi:car-door",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 21,
         ATTR_INVERSE: 0,
@@ -70,7 +69,7 @@ ENTITY_CONFIGS = {
     "right_front_door": {
         ATTR_NAME: "front right door",
         ATTR_ICON: "mdi:car-door",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 22,
         ATTR_INVERSE: 0,
@@ -78,7 +77,7 @@ ENTITY_CONFIGS = {
     "left_back_door": {
         ATTR_NAME: "back left door",
         ATTR_ICON: "mdi:car-door",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 23,
         ATTR_INVERSE: 0,
@@ -86,7 +85,7 @@ ENTITY_CONFIGS = {
     "right_back_door": {
         ATTR_NAME: "back right door",
         ATTR_ICON: "mdi:car-door",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
         ATTR_DEVICE_ATTR: "bit_state_1",
         ATTR_SHIFT_BITS: 24,
         ATTR_INVERSE: 0,

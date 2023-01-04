@@ -5,9 +5,10 @@ DETAILS
 """
 import logging
 
-from homeassistant.components.sensor import ENTITY_ID_FORMAT, DEVICE_CLASS_TEMPERATURE
+from homeassistant.components.sensor import ENTITY_ID_FORMAT
+from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME, LENGTH_KILOMETERS, PERCENTAGE, TEMP_CELSIUS
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME, PERCENTAGE, UnitOfLength, UnitOfElectricPotential, UnitOfTemperature, UnitOfSpeed
 from homeassistant.core import callback
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.util import slugify
@@ -24,8 +25,8 @@ ENTITY_CONFIGS = {
     "mileage": {
         ATTR_NAME: "mileage",
         ATTR_ICON: "mdi:map-marker-distance",
-        ATTR_DEVICE_CLASS: None,  # TODO: Make propper device class
-        ATTR_UNITS: LENGTH_KILOMETERS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.DISTANCE,  
+        ATTR_UNITS: UnitOfLength.KILOMETERS,
         ATTR_DEVICE_ATTR: "mileage",
         ATTR_FORMATTER: lambda v: round(float(v), 2),
     },
@@ -39,28 +40,28 @@ ENTITY_CONFIGS = {
     "cabin_temperature": {
         ATTR_NAME: "cabin temperature",
         ATTR_ICON: "mdi:thermometer",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        ATTR_UNITS: TEMP_CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+        ATTR_UNITS: UnitOfTemperature.CELSIUS,
         ATTR_DEVICE_ATTR: "cabin_temp",
     },
     "engine_temperature": {
         ATTR_NAME: "Engine temperature",
         ATTR_ICON: "mdi:thermometer",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        ATTR_UNITS: TEMP_CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+        ATTR_UNITS: UnitOfTemperature.CELSIUS,
         ATTR_DEVICE_ATTR: "engine_temp",
     },
     "ambient_temperature": {
         ATTR_NAME: "Ambient temperature",
         ATTR_ICON: "mdi:thermometer",
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        ATTR_UNITS: TEMP_CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+        ATTR_UNITS: UnitOfTemperature.CELSIUS,
         ATTR_DEVICE_ATTR: "out_temp",
     },
     "balance": {
         ATTR_NAME: "balance",
         ATTR_ICON: "mdi:cash",
-        ATTR_DEVICE_CLASS: None,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.MONETARY,
         ATTR_UNITS: "₽",
         ATTR_IS_CONNECTION_SENSITIVE: False,
         ATTR_DEVICE_ATTR: "balance",
@@ -69,8 +70,8 @@ ENTITY_CONFIGS = {
     "speed": {
         ATTR_NAME: "speed",
         ATTR_ICON: "mdi:gauge",
-        ATTR_DEVICE_CLASS: None,
-        ATTR_UNITS: "km/h",
+        ATTR_DEVICE_CLASS: SensorDeviceClass.SPEED,
+        ATTR_UNITS: UnitOfSpeed.KILOMETERS_PER_HOUR,
         ATTR_DEVICE_ATTR: "speed",
         ATTR_FORMATTER: lambda v: round(float(v), 1),
     },
@@ -91,8 +92,8 @@ ENTITY_CONFIGS = {
     "battery_voltage": {
         ATTR_NAME: "battery",
         ATTR_ICON: "mdi:car-battery",
-        ATTR_DEVICE_CLASS: None,
-        ATTR_UNITS: "V",
+        ATTR_DEVICE_CLASS: SensorDeviceClass.VOLTAGE,
+        ATTR_UNITS: UnitOfElectricPotential.VOLT,
         ATTR_DEVICE_ATTR: "voltage",
     },
 }

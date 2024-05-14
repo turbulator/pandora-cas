@@ -48,5 +48,33 @@
                 "description": "Задайте параметры для {name}"
             }
         }
+    },
+    "entity": {
+        "binary_sensor": {
+            "pandora_cas__engine": {
+                "state": {
+                    "off": "Заглушен",
+                    "on": "Работает"
+                }
+            },
+            "pandora_cas__door_male": {
+                "state": {
+                    "off": "Закрыт",
+                    "on": "Открыт"
+                }
+            },
+            "pandora_cas__moving": {
+                "state": {
+                    "off": "Неподвижен",
+                    "on": "В движении"
+                }
+            },
+            "pandora_cas__guard": {
+                "state": {
+                    "off": "Под охраной",
+                    "on": "Снято с охраны"
+                }
+            }
+        }
     }
 }

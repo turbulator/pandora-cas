@@ -186,6 +186,11 @@ class PandoraBinarySensorEntity(PandoraEntity, BinarySensorEntity):
         """Return the state of the binary sensor."""
         return self._state
 
+    @property
+    def translation_key(self):
+        """Return the translation key to translate the entity's name and states."""
+        return self.device_class
+
     # pylint: disable=attribute-defined-outside-init
     @callback
     def _update_callback(self, force=False):

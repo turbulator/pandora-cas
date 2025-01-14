@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from homeassistant.const import PERCENTAGE, VOLUME_LITERS
+from homeassistant.const import PERCENTAGE, UnitOfVolume
 
 DOMAIN = "pandora_cas"
 
@@ -20,7 +20,7 @@ CONF_POLLING_INTERVAL = "polling_interval"
 MIN_POLLING_INTERVAL = timedelta(seconds=10)
 DEFAULT_POLLING_INTERVAL = timedelta(minutes=1)
 
-FUEL_UNITS = [PERCENTAGE, VOLUME_LITERS]
+FUEL_UNITS = [PERCENTAGE, UnitOfVolume.LITERS]
 MILEAGE_SOURCES = ["GPS", "CAN"]
 OPTION_FUEL_UNITS = "fuel_units"
 OPTION_MILEAGE_SOURCE = "mileage_source"

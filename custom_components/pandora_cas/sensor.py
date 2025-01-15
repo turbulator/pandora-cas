@@ -9,8 +9,7 @@ from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME, PERCENTAGE, UnitOfLength, UnitOfElectricPotential, UnitOfTemperature, UnitOfSpeed
-from homeassistant.core import callback
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
 
 from .api import PandoraDevice
@@ -100,7 +99,7 @@ ENTITY_CONFIGS = {
 
 
 # pylint: disable=unused-argument
-async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up ecobee binary (occupancy) sensors."""
 
     api = hass.data[DOMAIN]

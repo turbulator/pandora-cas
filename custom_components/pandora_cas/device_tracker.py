@@ -8,9 +8,9 @@ import logging
 from homeassistant.components.device_tracker import DOMAIN as PLATFORM_DOMAIN, SourceType
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
-from homeassistant.core import callback
+
 
 from .api import PandoraDevice
 from .const import DOMAIN
@@ -19,7 +19,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=unused-argument
-async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the tracker."""
 
     api = hass.data[DOMAIN]
@@ -42,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry, 
 class PandoraTrackerEntity(TrackerEntity):
     """"""
 
-    def __init__(self, hass: HomeAssistantType, device: PandoraDevice):
+    def __init__(self, hass: HomeAssistant, device: PandoraDevice):
         self._hass = hass
         self._device = device
         self._latitude = None

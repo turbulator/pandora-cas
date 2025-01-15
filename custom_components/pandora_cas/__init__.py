@@ -12,9 +12,10 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import SOURCE_DISCOVERY, ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import discovery
 from homeassistant.helpers.event import async_track_time_interval, track_time_interval
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import PandoraApi, PandoraApiException
@@ -64,7 +65,7 @@ SERVICE_MAP = {
 PANDORA_CAS_PLATFORMS = ["sensor", "binary_sensor", "device_tracker"]
 
 
-async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Activate Pandora Car Alarm System component"""
 
     hass.data[DOMAIN] = {}
@@ -91,7 +92,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Setup configuration entry for Pandora Car Alarm System."""
 
     username = config_entry.data[CONF_USERNAME]
@@ -122,18 +123,13 @@ async def async_setup_entry(hass: HomeAssistantType, config_entry: ConfigEntry) 
         _LOGGER.error("Setting up entry %s failed: %s", username, str(ex))
         return False
 
-    for platform in PANDORA_CAS_PLATFORMS:
-        hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, platform))
+    await hass.config_entries.async_forward_entry_setups(config_entry, PANDORA_CAS_PLATFORMS)
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistantType, config_entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload the config entry and platforms."""
     hass.data.pop(DOMAIN)
 
-    tasks = []
-    for platform in PANDORA_CAS_PLATFORMS:
-        tasks.append(hass.config_entries.async_forward_entry_unload(config_entry, platform))
-
-    return all(await asyncio.gather(*tasks))
+    return await hass.config_entries.async_unload_platforms(entry, PANDORA_CAS_PLATFORMS)

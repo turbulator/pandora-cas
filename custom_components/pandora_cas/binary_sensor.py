@@ -12,8 +12,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, ATTR_NAME
-from homeassistant.core import callback
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import slugify
 
 from .api import PandoraDevice
@@ -134,7 +133,7 @@ ENTITY_CONFIGS = {
 
 
 # pylint: disable=unused-argument
-async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """"""
 
     api = hass.data[DOMAIN]

@@ -7,10 +7,9 @@ from json import JSONDecodeError
 from typing import Callable
 
 import aiohttp
-from homeassistant.core import CALLBACK_TYPE, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_track_point_in_utc_time
-from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.dt import utcnow
 
@@ -49,7 +48,7 @@ class PandoraApiException(Exception):
 class PandoraApi:
     """Pandora API class."""
 
-    def __init__(self, hass: HomeAssistantType, username: str, password: str, polling_interval: int) -> None:
+    def __init__(self, hass: HomeAssistant, username: str, password: str, polling_interval: int) -> None:
         """Constructor"""
         self._hass = hass
         self._username = username
